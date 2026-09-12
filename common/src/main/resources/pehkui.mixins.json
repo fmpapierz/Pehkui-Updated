@@ -1,0 +1,81 @@
+{
+	"required": true,
+	"minVersion": "0.8",
+	"package": "virtuoel.pehkui.mixin",
+	"compatibilityLevel": "JAVA_21",
+	"mixins":
+	[
+		"AbstractArrowMixin",
+		"AbstractChestBoatMixin",
+		"AbstractCubeMobMixin",
+		"AbstractThrownPotionMixin",
+		"AnimalMixin",
+		"AreaEffectCloudMixin",
+		"ArmorStandMixin",
+		"BehaviorUtilsMixin",
+		"BlazeAttackGoalMixin",
+		"BlockStateBaseMixin",
+		"BreedGoalMixin",
+		"DataCommandInvoker",
+		"DragonFireballMixin",
+		"EntityMixin",
+		"EntityRefreshDimensionsMixin",
+		"EntitySectionMixin",
+		"EntitySelectorOptionsInvoker",
+		"EntitySelectorParserMixin",
+		"EvokerSummonSpellGoalMixin",
+		"FishingHookMixin",
+		"FoxBreedGoalMixin",
+		"GhastShootFireballGoalMixin",
+		"HangingEntityMixin",
+		"ItemEntityMixin",
+		"LargeFireballMixin",
+		"LivingEntityMixin",
+		"MobAttackBoxMixin",
+		"MobConvertMixin",
+		"MobMixin",
+		"NbtPredicateMixin",
+		"NetherPortalBlockMixin",
+		"OperationArgumentTypeAccessor",
+		"PlayerListMixin",
+		"PlayerMixin",
+		"PreEntityTickMixin",
+		"ProjectileMixin",
+		"ProjectileShootMixin",
+		"ProjectileUtilMixin",
+		"RavagerMixin",
+		"ServerEntityMixin",
+		"ServerGamePacketListenerImplMixin",
+		"ServerPlayerMixin",
+		"ShulkerMixin",
+		"SpawnEggItemMixin",
+		"TargetGoalMixin",
+		"TargetingConditionsMixin",
+		"ThreadSafeScaledEntityMixin",
+		"ThrownEggMixin",
+		"ThrownSplashPotionMixin",
+		"VillagerMakeLoveMixin",
+		"WitherBossMixin"
+	],
+	"client":
+	[
+		"client.AvatarRendererMixin",
+		"client.CameraMixin",
+		"client.ClientLevelMixin",
+		"client.ClientPacketListenerMixin",
+		"client.EntityRenderDispatcherMixin",
+		"client.EntityRenderStateMixin",
+		"client.EntityRendererMixin",
+		"client.GameRendererMixin",
+		"client.LocalPlayerMixin",
+		"client.ShulkerRendererMixin"
+	],
+	"injectors":
+	{
+		"defaultRequire": 1
+	},
+	"overwrites":
+	{
+		"requireAnnotations": true
+	}
+}

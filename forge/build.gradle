@@ -1,0 +1,43 @@
+plugins { id 'net.minecraftforge.gradle' }
+
+sourceSets.main {
+	java.srcDir project(':common').file('src/main/java')
+	resources.srcDir project(':common').file('src/main/resources')
+}
+
+minecraft {
+	runs {
+		configureEach {
+			workingDir = layout.projectDirectory.dir('run')
+			args '--mixin.config=pehkui.mixins.json'
+		}
+		register('client')
+		register('server') { args '--nogui' }
+	}
+}
+
+repositories {
+	minecraft.mavenizer(it)
+	maven fg.forgeMaven
+	maven fg.minecraftLibsMaven
+	mavenCentral()
+}
+
+dependencies {
+	implementation minecraft.dependency("net.minecraftforge:forge:${forge_version}")
+	compileOnly 'org.jetbrains:annotations:26.0.2'
+	compileOnly 'io.github.llamalad7:mixinextras-common:0.5.5'
+	annotationProcessor 'io.github.llamalad7:mixinextras-common:0.5.5'
+}
+
+jar { manifest { attributes 'MixinConfigs': 'pehkui.mixins.json' } }
+
+// Keep compiled classes beside the metadata so Forge's development-time module discovery
+// finds them, and make ProcessResources depend on compileJava so an incremental rebuild
+// cannot wipe the classes out of the merged output directory.
+tasks.named('compileJava') { destinationDirectory = layout.buildDirectory.dir('classes/java/main') }
+tasks.named('processResources') {
+	dependsOn tasks.named('compileJava')
+	from(tasks.named('compileJava').flatMap { it.destinationDirectory })
+}
+tasks.withType(Jar).configureEach { duplicatesStrategy = DuplicatesStrategy.EXCLUDE }

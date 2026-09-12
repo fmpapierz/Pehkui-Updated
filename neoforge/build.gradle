@@ -1,0 +1,25 @@
+plugins { id 'net.neoforged.moddev' }
+
+dependencies {
+	compileOnly 'org.jetbrains:annotations:26.0.2'
+	compileOnly 'io.github.llamalad7:mixinextras-common:0.5.5'
+	annotationProcessor 'io.github.llamalad7:mixinextras-common:0.5.5'
+}
+
+sourceSets.main {
+	java.srcDir project(':common').file('src/main/java')
+	resources.srcDir project(':common').file('src/main/resources')
+}
+
+neoForge {
+	version = neo_version
+
+	runs {
+		client { client() }
+		server { server(); programArgument '--nogui' }
+	}
+
+	mods {
+		pehkui { sourceSet sourceSets.main }
+	}
+}

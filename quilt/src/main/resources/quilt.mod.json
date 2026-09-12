@@ -1,0 +1,74 @@
+{
+	"schema_version": 1,
+	"quilt_loader":
+	{
+		"group": "virtuoel",
+		"id": "${mod_id}",
+		"version": "${mod_version}",
+		"metadata":
+		{
+			"name": "${mod_name}",
+			"description": "${mod_description}",
+			"contributors":
+			{
+				"Virtuoel": "Author",
+				"Draylar": "Contributor",
+				"haykam821": "Contributor",
+				"Leximon": "Contributor",
+				"MerchantPug": "Contributor",
+				"TheGrimsey": "Contributor"
+			},
+			"contact":
+			{
+				"homepage": "${homepage_url}",
+				"issues": "${issues_url}",
+				"sources": "${sources_url}"
+			},
+			"icon": "assets/pehkui/icon.png",
+			"license": "${mod_license}"
+		},
+		"intermediate_mappings": "net.fabricmc:intermediary",
+		"entrypoints":
+		{
+			"init":
+			[
+				"virtuoel.pehkui.fabric.PehkuiFabric"
+			],
+			"client_init":
+			[
+				"virtuoel.pehkui.fabric.PehkuiFabricClient"
+			]
+		},
+		"depends":
+		[
+			{
+				"id": "quilt_loader",
+				"versions": ">=${quilt_loader_version}"
+			},
+			{
+				"id": "minecraft",
+				"versions": "${minecraft_version}"
+			},
+			{
+				"id": "fabric-api-base"
+			},
+			{
+				"id": "fabric-command-api-v2"
+			},
+			{
+				"id": "fabric-networking-api-v1"
+			},
+			{
+				"id": "fabric-registry-sync-v0"
+			},
+			{
+				"id": "fabric-resource-loader-v0"
+			}
+		]
+	},
+	"mixin": "pehkui.mixins.json",
+	"minecraft":
+	{
+		"environment": "*"
+	}
+}

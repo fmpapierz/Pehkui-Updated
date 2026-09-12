@@ -1,0 +1,67 @@
+plugins {
+	id 'base'
+	id 'net.fabricmc.fabric-loom' version '1.17.20' apply false
+	id 'net.neoforged.moddev' version '2.0.146' apply false
+	id 'net.minecraftforge.gradle' version '7.0.36' apply false
+}
+
+subprojects {
+	apply plugin: 'java-library'
+
+	group = rootProject.maven_group
+	version = rootProject.mod_version
+	base.archivesName = "${rootProject.archives_base_name}-${project.name}"
+
+	java {
+		toolchain.languageVersion = JavaLanguageVersion.of(rootProject.java_version as int)
+		withSourcesJar()
+	}
+
+	repositories {
+		mavenCentral()
+	}
+
+	tasks.withType(JavaCompile).configureEach {
+		options.encoding = 'UTF-8'
+		options.release = rootProject.java_version as int
+	}
+
+	tasks.withType(ProcessResources).configureEach {
+		def props = [
+			mod_id           : rootProject.mod_id,
+			mod_name         : rootProject.mod_name,
+			mod_version      : project.version,
+			mod_license      : rootProject.mod_license,
+			mod_description  : rootProject.mod_description,
+			minecraft_version: rootProject.minecraft_version,
+			homepage_url     : rootProject.homepage_url,
+			issues_url       : rootProject.issues_url,
+			sources_url      : rootProject.sources_url,
+			fabric_loader_version: rootProject.fabric_loader_version,
+			quilt_loader_version : rootProject.quilt_loader_version,
+			neo_version      : rootProject.neo_version,
+			forge_version    : rootProject.forge_version,
+			java_version     : rootProject.java_version
+		]
+		inputs.properties props
+		filesMatching(['fabric.mod.json', 'quilt.mod.json', 'META-INF/mods.toml', 'META-INF/neoforge.mods.toml']) {
+			expand props
+		}
+	}
+
+	tasks.withType(Jar).configureEach {
+		from(rootProject.file('LICENSE')) {
+			rename { "${it}_${rootProject.archives_base_name}" }
+		}
+	}
+}
+
+tasks.register('collectJars', Copy) {
+	dependsOn ':fabric:build', ':quilt:build', ':forge:build', ':neoforge:build'
+	from(subprojects.findAll { it.name != 'common' }.collect { it.layout.buildDirectory.dir('libs') }) {
+		exclude '*-sources.jar'
+	}
+	into layout.buildDirectory.dir('libs')
+}
+
+build.dependsOn 'collectJars'
