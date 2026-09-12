@@ -70,6 +70,7 @@
 		"client.GameRendererMixin",
 		"client.InventoryScreenMixin",
 		"client.LocalPlayerMixin",
+		"client.ScreenEffectRendererMixin",
 		"client.ShulkerRendererMixin"
 	],
 	"injectors":
