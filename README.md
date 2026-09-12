@@ -78,17 +78,19 @@ of the Minecraft-facing half rather than a version bump.
 - **The walk bob is measured in strides, not blocks.** 26.2 runs the camera bob and the
   first-person hand through the same `GameRenderer#bobView` transform, fed by how far the player
   has walked and how far it moved this tick — both in blocks. Scaled up that meant a violent shake
-  with the hand whipping across the screen. The pace is divided by the motion scale so the bob
-  keeps its normal cadence at any size, and the
-  depth now shrinks with the entity while staying put above normal size, where vanilla's own cap
-  already holds it steady. Both the first person view and the third person camera read the same
-  value, so they move together. The `view_bobbing` scale type is still there and still applied — it
+  with the hand whipping across the screen, and scaled down it was deep enough to dip the camera
+  through the floor. The pace is divided by the motion scale so the bob keeps its normal cadence at
+  any size, and the depth shrinks with the entity while staying put above normal size, where
+  vanilla's own cap already holds it steady. Both the first person view and the third person camera
+  read the same value, so they move together. The `view_bobbing` scale type is still there and still applied — it
   just defaults to 1 instead of tracking the entity's size, so set it explicitly if you want the
   whole transform to grow.
-- **The near clipping plane follows the camera down.** Upstream scaled the plane used for the held
-  item, but 26.2 sets the world's own near plane in `Camera#update`, which upstream never touched.
-  Below about 1/30 scale the eyes sit closer to the floor than the fixed 5cm plane, which put the
-  block underfoot behind the camera and let the view see straight through it.
+- **The camera stays above the floor when tiny.** Two things put it through the block underfoot.
+  The walk bob translates the view down by up to a tenth of a block, which was more headroom than a
+  player below about a thirtieth of normal size has, so every step dipped the camera into the
+  ground; scaling the bob's depth with the entity, above, is what fixes that. The other is the
+  world's near clipping plane, which 26.2 sets in `Camera#update` — upstream only ever scaled the
+  one used for the held item, and the fixed five centimetres reaches past a shrunken player's eyes.
 - **The body turns to follow the walk at any size.** Vanilla only swings an entity's body round to
   face the way it is travelling once it has covered a set distance within the tick. A shrunken
   entity's whole stride falls short of that, so below about 1/3 scale the body stayed pointing
