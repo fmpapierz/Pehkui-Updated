@@ -27,7 +27,6 @@ import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import virtuoel.pehkui.Pehkui;
 import virtuoel.pehkui.api.PehkuiConfig;
@@ -277,12 +276,6 @@ public abstract class EntityMixin implements PehkuiEntityExtensions
 	private boolean pehkui$isInWall(boolean original)
 	{
 		return original && !ScalePhysicsUtils.exceedsScanBudget((Entity) (Object) this);
-	}
-
-	@ModifyReturnValue(method = "getFluidInteractionBox", at = @At("RETURN"))
-	private AABB pehkui$getFluidInteractionBox(AABB original)
-	{
-		return original == null ? null : ScalePhysicsUtils.limitFor(original, (Entity) (Object) this);
 	}
 
 	@WrapOperation(method = "push(Lnet/minecraft/world/entity/Entity;)V", at = @At(value = "INVOKE", ordinal = 0, target = "Lnet/minecraft/world/entity/Entity;push(DDD)V"))

@@ -115,33 +115,19 @@ sixteen blocks across — but the work grows with the cube of the scale, so a hi
 freely does not slow the game down, it stops it.
 
 `physicsBoxLimit` in `config/pehkui/config.json` is the side, in blocks, of the largest hitbox that
-still gets all of that; it defaults to 24, which for a player is reached at roughly twenty-seven
-times normal size. Below the limit nothing changes at all. Above it:
+still gets all of it; it defaults to 24, which for a player is a little under thirty times normal
+size. Past that the two scans that only read the world are dropped: the block-effect scan and the
+suffocation check. A cactus underfoot means nothing to something the size of a hill, and it is the
+scan rather than the effect that stalls the game. The trade is that blocks acting on an entity from
+the inside — nether portals included — no longer act on one this large.
 
-- Block collision is resolved against a core of that size standing at the entity's feet. Everything
-  below the feet is still scanned, so a falling giant finds the ground rather than dropping through
-  it. What it gives up is the parts of its body far from that core bumping into terrain.
-- The block-effect and suffocation scans stop. A cactus underfoot means nothing to something the
-  size of a hill, and it is the scan rather than the effect that stalls the game. Blocks that act on
-  an entity from the inside — nether portals included — do not act on one this large.
-
-Measured on a dedicated 26.2 server, one scaled zombie standing in a flat world, average tick time
-over 100 ticks from `/tick query` (a tick has 50ms to spend):
-
-| scale | hitbox     | unbounded   | bounded   |
-| ----- | ---------- | ----------- | --------- |
-| 1     | 0.6 x 1.95 | 0.2ms       | 0.3ms     |
-| 20    | 12 x 39    | 0.4 - 0.5ms | 0.5 - 0.8ms |
-| 40    | 24 x 78    | 1.3 - 1.4ms | 0.3 - 0.5ms |
-| 80    | 48 x 156   | 8.4 - 9.4ms | 0.5 - 0.8ms |
-| 160   | 96 x 312   | 82ms        | 0.5 - 0.7ms |
-| 320   | 192 x 624  | not tested  | 0.5 - 0.7ms |
-| 640   | 384 x 1248 | not tested  | 1.8ms     |
-
-The two columns run the same code up to scale 20, where the hitbox is still inside the budget, so
-the spread there is the measurement noise. Unbounded was not taken past 160, where the server was
-already an order of magnitude over budget and falling behind. Note that this measures the physics
-half only: a client also has the giant to draw.
+Collision is deliberately left exactly as vanilla resolves it. Cutting the collision scan down the
+same way did make it cheap, but it left the parts of a large entity outside the scanned region
+overlapping terrain that nothing then pushed them out of, and the entity got flung around instead
+of walking. Whatever cost remains at very large sizes is that scan, and it is inherent to a large
+hitbox rather than something the mod adds on top. If you want a hard ceiling, every scale type takes
+a configurable maximum: `/scale debug config set hitbox_width maximum <n>`, and the same for
+`hitbox_height`, keeps the hitbox at a fixed size while the model carries on growing.
 
 Two smaller things Pehkui itself did are bounded now as well:
 
@@ -152,10 +138,6 @@ Two smaller things Pehkui itself did are bounded now as well:
 - The two climb checks that let a wide entity grab a ladder its centre point misses sweep the
   blocks under the hitbox, so their cost grows with the square of the width, several times a tick.
   The sweep is abandoned past a 16x16 footprint.
-
-If you would rather cap the size itself than let the hitbox and the model part company, every scale
-type also takes a configurable maximum: `/scale debug config set hitbox_width maximum <n>` and the
-same for `hitbox_height`.
 
 ### Not carried over
 
