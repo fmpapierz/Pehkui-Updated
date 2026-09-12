@@ -78,18 +78,19 @@ of the Minecraft-facing half rather than a version bump.
 - **The walk bob is measured in strides, not blocks.** 26.2 runs the camera bob and the
   first-person hand through the same `GameRenderer#bobView` transform, fed by how far the player
   has walked and how far it moved this tick — both in blocks. Scaled up that meant a violent shake
-  with the hand whipping across the screen. The pace is divided by the motion scale so the bob keeps its normal cadence at
-  any size, and the depth shrinks with the entity while staying put above normal size, where
-  vanilla's own cap already holds it steady. Both the first person view and the third person camera
-  read the same value, so they move together. The `view_bobbing` scale type is still there and still applied — it
-  just defaults to 1 instead of tracking the entity's size, so set it explicitly if you want the
-  whole transform to grow.
+  with the hand whipping across the screen. The pace is divided by the motion scale so the bob keeps
+  its normal cadence at any size, and the depth shrinks with the entity while staying put above
+  normal size, where vanilla's own cap already holds it steady. The first person view and the third
+  person camera read the same value, so they move together. The `view_bobbing` scale type is still
+  there and still applied — it just defaults to 1 instead of tracking the entity's size, so set it
+  explicitly if you want the whole transform to grow.
 - **The view no longer fills with the block underfoot when tiny.** The check for whether the camera
   is inside a block probes a tenth of a block above and below the eyes, a fixed distance that a
   player under about a thirtieth of normal size no longer clears, so the screen filled with the
   texture of the block they were standing on. Upstream scaled that probe and the port had dropped
-  it; it follows the eye height again, on all four loaders — NeoForge splits the check in two so it
-  can report a position with the state, so both method names are patched.
+  it; it follows the eye height again, on all four loaders. Forge and NeoForge each split the check
+  in two so it can report a position alongside the state, and they named the half holding the probe
+  differently, so all three spellings are patched.
 - **The near clipping plane follows the camera down.** 26.2 sets the world's own near plane in
   `Camera#update`; upstream only ever scaled the one used for the held item, and the fixed five
   centimetres reaches past a shrunken player's eyes when they look straight down.
@@ -137,10 +138,34 @@ the inside — nether portals included — no longer act on one this large.
 Collision is deliberately left exactly as vanilla resolves it. Cutting the collision scan down the
 same way did make it cheap, but it left the parts of a large entity outside the scanned region
 overlapping terrain that nothing then pushed them out of, and the entity got flung around instead
-of walking. Whatever cost remains at very large sizes is that scan, and it is inherent to a large
-hitbox rather than something the mod adds on top. If you want a hard ceiling, every scale type takes
-a configurable maximum: `/scale debug config set hitbox_width maximum <n>`, and the same for
-`hitbox_height`, keeps the hitbox at a fixed size while the model carries on growing.
+of walking. As it turns out, it did not need cutting down: the two read-only scans were carrying
+essentially all of the cost.
+
+Measured on a dedicated 26.2 server, one scaled zombie on flat ground, average tick time over 100
+ticks from `/tick query`. A tick has 50ms to spend. Both columns are the same build back to back on
+an idle machine, the second with `physicsBoxLimit` raised out of reach:
+
+| scale | hitbox     | with the budget | without it  |
+| ----- | ---------- | --------------- | ----------- |
+| 1     | 0.6 x 1.95 | 0.2ms           | 0.2ms       |
+| 20    | 12 x 39    | 0.3ms           | 0.3ms       |
+| 40    | 24 x 78    | 0.1ms           | 1.3 - 1.6ms |
+| 80    | 48 x 156   | 0.2ms           | 9.2 - 9.3ms |
+| 160   | 96 x 312   | 0.3ms           | 85 - 95ms   |
+| 320   | 192 x 624  | 0.3 - 0.4ms     | not tested  |
+
+The two columns run identical code up to scale 20, where the hitbox is still inside the budget. Past
+it the line goes flat, and stays flat to three hundred and twenty times normal size, where the
+hitbox is 192 blocks across. Without the budget the server was already running two ticks behind by
+160 and was not worth taking further.
+
+Two things that measurement does not cover. The test entity stands still, so collision runs on the
+tick's own gravity but never sweeps a walking stride, and the world is superflat, so the blocks the
+scan walks are nearly all air; dense terrain and movement both cost more. And it is the server's
+half of the work only — a client also has the giant to draw. If you want a hard ceiling anyway,
+every scale type takes a configurable maximum: `/scale debug config set hitbox_width maximum <n>`,
+and the same for `hitbox_height`, keeps the hitbox at a fixed size while the model carries on
+growing.
 
 Two smaller things Pehkui itself did are bounded now as well:
 
