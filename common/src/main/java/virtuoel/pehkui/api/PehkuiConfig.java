@@ -55,6 +55,15 @@ public class PehkuiConfig
 		public final Supplier<Boolean> scaledProjectiles;
 		public final Supplier<Boolean> scaledExplosions;
 
+		/**
+		 * Widest hitbox, in blocks, that still gets vanilla's full block physics. Every block the
+		 * hitbox covers is visited several times a tick, so the cost grows with the cube of the scale
+		 * and an unbounded hitbox stalls the game outright. Past this the entity keeps its size, eye
+		 * height and model, but collides through a core of this size standing at its feet. Vanilla's
+		 * largest entity is under sixteen blocks across, so nothing unscaled is affected.
+		 */
+		public final Supplier<Double> physicsBoxLimit;
+
 		private Common(final JsonConfigBuilder builder)
 		{
 			this.keepAllScalesOnRespawn = builder.booleanConfig(synced("keepAllScalesOnRespawn", "boolean"), false);
@@ -74,6 +83,8 @@ public class PehkuiConfig
 			this.scaledItemDrops = builder.booleanConfig(synced("scaledItemDrops", "boolean"), true);
 			this.scaledProjectiles = builder.booleanConfig(synced("scaledProjectiles", "boolean"), true);
 			this.scaledExplosions = builder.booleanConfig(synced("scaledExplosions", "boolean"), true);
+
+			this.physicsBoxLimit = builder.doubleConfig(synced("physicsBoxLimit", "double"), 24.0D);
 
 			Identifier id;
 			String namespace, path;

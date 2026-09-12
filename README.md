@@ -75,11 +75,26 @@ of the Minecraft-facing half rather than a version bump.
   `PehkuiRenderStateExtensions`) and applied to the pose stack around `submit`.
 - **Knockback.** Upstream patched the knockback constant at each call site. 26.2 routes all
   knockback through `LivingEntity#knockback`, so it is scaled once there, by the attacker.
-- **View bobbing no longer follows size.** 26.2 runs the camera bob and the first-person hand
-  through the same `GameRenderer#bobView` transform, so scaling it turned walking into a violent
-  shake with the hand whipping across the screen once the player got big. The `view_bobbing` scale
-  type is still there and still applied — it just defaults to 1 instead of tracking the entity's
-  size, so set it explicitly if you want the bob to grow.
+- **The walk bob is measured in strides, not blocks.** 26.2 runs the camera bob and the
+  first-person hand through the same `GameRenderer#bobView` transform, fed by how far the player
+  has walked and how far it moved this tick — both in blocks. Scaled up that meant a violent shake
+  with the hand whipping across the screen; scaled down it meant no bob at all. Both inputs are now
+  divided by the motion scale, so the bob keeps its normal depth and cadence at any size. The
+  `view_bobbing` scale type is still there and still applied — it just defaults to 1 instead of
+  tracking the entity's size, so set it explicitly if you want the bob to grow.
+- **The near clipping plane follows the camera down.** Upstream scaled the plane used for the held
+  item, but 26.2 sets the world's own near plane in `Camera#update`, which upstream never touched.
+  Below about 1/30 scale the eyes sit closer to the floor than the fixed 5cm plane, which put the
+  block underfoot behind the camera and let the view see straight through it.
+- **The body turns to follow the walk at any size.** Vanilla only swings an entity's body round to
+  face the way it is travelling once it has covered a set distance within the tick. A shrunken
+  entity's whole stride falls short of that, so below about 1/3 scale the body stayed pointing
+  wherever it last faced while the head turned ahead of it. The threshold now follows the entity's
+  own stride.
+- **Falling is not slowed by shrinking.** Scaling what an entity covers in a tick is what gives a
+  small one small steps, but applying it downwards as well made a shrunken player drift to the
+  ground like a feather. Gravity now pulls at its normal rate however small the entity is. Growing
+  still speeds a fall up, which is what stops a large entity appearing to sink in slow motion.
 - **The inventory portrait fits its frame.** It draws through the normal entity renderer, so a
   grown player overflowed the box and only a sliver stayed visible. Growth is now capped at the
   frame, the same way vanilla already caps its own scale attribute there. Shrinking is untouched,
@@ -93,7 +108,42 @@ of the Minecraft-facing half rather than a version bump.
 
 ### Cost at large scales
 
-Two things Pehkui itself did got very expensive as an entity grew, and both are bounded now:
+Several times a tick, vanilla walks every block an entity's hitbox covers: once to resolve
+collision, once to apply the effects of the blocks it is standing in, and once more to check for
+suffocation. That is nothing at the sizes the game produces on its own — its largest entity is under
+sixteen blocks across — but the work grows with the cube of the scale, so a hitbox left to grow
+freely does not slow the game down, it stops it.
+
+`physicsBoxLimit` in `config/pehkui/config.json` is the side, in blocks, of the largest hitbox that
+still gets all of that; it defaults to 24, which for a player is reached at roughly twenty-seven
+times normal size. Below the limit nothing changes at all. Above it:
+
+- Block collision is resolved against a core of that size standing at the entity's feet. Everything
+  below the feet is still scanned, so a falling giant finds the ground rather than dropping through
+  it. What it gives up is the parts of its body far from that core bumping into terrain.
+- The block-effect and suffocation scans stop. A cactus underfoot means nothing to something the
+  size of a hill, and it is the scan rather than the effect that stalls the game. Blocks that act on
+  an entity from the inside — nether portals included — do not act on one this large.
+
+Measured on a dedicated 26.2 server, one scaled zombie standing in a flat world, average tick time
+over 100 ticks from `/tick query` (a tick has 50ms to spend):
+
+| scale | hitbox     | unbounded   | bounded   |
+| ----- | ---------- | ----------- | --------- |
+| 1     | 0.6 x 1.95 | 0.2ms       | 0.3ms     |
+| 20    | 12 x 39    | 0.4 - 0.5ms | 0.5 - 0.8ms |
+| 40    | 24 x 78    | 1.3 - 1.4ms | 0.3 - 0.5ms |
+| 80    | 48 x 156   | 8.4 - 9.4ms | 0.5 - 0.8ms |
+| 160   | 96 x 312   | 82ms        | 0.5 - 0.7ms |
+| 320   | 192 x 624  | not tested  | 0.5 - 0.7ms |
+| 640   | 384 x 1248 | not tested  | 1.8ms     |
+
+The two columns run the same code up to scale 20, where the hitbox is still inside the budget, so
+the spread there is the measurement noise. Unbounded was not taken past 160, where the server was
+already an order of magnitude over budget and falling behind. Note that this measures the physics
+half only: a client also has the giant to draw.
+
+Two smaller things Pehkui itself did are bounded now as well:
 
 - Vanilla nudges an entity out of a wall after it grows by searching every block its new hitbox
   covers, and skips that entirely for anything over 4 blocks across. Pehkui re-enabled the search
@@ -103,10 +153,9 @@ Two things Pehkui itself did got very expensive as an entity grew, and both are 
   blocks under the hitbox, so their cost grows with the square of the width, several times a tick.
   The sweep is abandoned past a 16x16 footprint.
 
-What is left is vanilla's own collision sweep, which walks every block the hitbox touches on any
-tick the entity actually moves. That is inherent to a large hitbox rather than something the mod
-adds. If you want a hard ceiling, every scale type already takes a configurable maximum:
-`/scale debug config set hitbox_width maximum <n>` and the same for `hitbox_height`.
+If you would rather cap the size itself than let the hitbox and the model part company, every scale
+type also takes a configurable maximum: `/scale debug config set hitbox_width maximum <n>` and the
+same for `hitbox_height`.
 
 ### Not carried over
 

@@ -28,6 +28,17 @@ public abstract class CameraMixin
 		return cameraDist * ScaleUtils.getThirdPersonScale(this.entity, ScaleRenderUtils.getTickDelta());
 	}
 	
+	/**
+	 * The near clipping plane for the world. A shrunken player's eyes sit closer to the floor than
+	 * the fixed five centimetre plane, which put the block underfoot behind the camera and let the
+	 * view see straight through it, so the plane comes in with the player.
+	 */
+	@ModifyExpressionValue(method = "update", at = @At(value = "CONSTANT", args = "floatValue=0.05F"))
+	private float pehkui$update$nearPlane(float value)
+	{
+		return ScaleRenderUtils.modifyProjectionMatrixDepth(value, this.entity, ScaleRenderUtils.getTickDelta());
+	}
+
 	@ModifyExpressionValue(method = "getMaxZoom", at = @At(value = "CONSTANT", args = "floatValue=0.1F"))
 	private float pehkui$getMaxZoom$offset(float value)
 	{

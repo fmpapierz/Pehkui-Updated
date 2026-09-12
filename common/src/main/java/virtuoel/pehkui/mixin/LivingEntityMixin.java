@@ -29,6 +29,21 @@ public abstract class LivingEntityMixin extends EntityMixin
 {
 	@Unique private BlockPos pehkui$initialClimbingPos = null;
 
+	/**
+	 * Vanilla only swings the body round to face the way an entity is travelling once it has
+	 * covered a set distance within the tick. A shrunken entity's entire stride falls short of
+	 * that, so its body stayed pointing wherever it last faced while the head turned ahead of it,
+	 * up to the fifty degrees the neck allows. The threshold follows the entity's own stride
+	 * instead; it is a squared distance, hence the squared scale.
+	 */
+	@ModifyExpressionValue(method = "tick", at = @At(value = "CONSTANT", args = "floatValue=0.0025000002F"))
+	private float pehkui$tick$bodyTurnDistance(float value)
+	{
+		final float scale = ScaleUtils.getMotionScale((Entity) (Object) this);
+
+		return scale != 1.0F ? value * scale * scale : value;
+	}
+
 	@ModifyExpressionValue(method = "aiStep", at = @At(value = "CONSTANT", args = "doubleValue=0.003D"))
 	private double pehkui$aiStep$minVelocity(double value)
 	{

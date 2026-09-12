@@ -27,6 +27,7 @@ import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import virtuoel.pehkui.Pehkui;
 import virtuoel.pehkui.api.PehkuiConfig;
@@ -35,6 +36,7 @@ import virtuoel.pehkui.api.ScaleRegistries;
 import virtuoel.pehkui.api.ScaleType;
 import virtuoel.pehkui.server.command.DebugCommand;
 import virtuoel.pehkui.util.PehkuiEntityExtensions;
+import virtuoel.pehkui.util.ScalePhysicsUtils;
 import virtuoel.pehkui.util.ScaleUtils;
 
 @Mixin(Entity.class)
@@ -231,15 +233,56 @@ public abstract class EntityMixin implements PehkuiEntityExtensions
 		return scale < 1.0F ? scale * scale * value : value;
 	}
 
+	/**
+	 * Scaling what an entity moves in a tick is what makes a small one take small steps. Falling is
+	 * left out of it: a shrunken entity whose fall was scaled down too drifted to the ground like a
+	 * feather instead of dropping, so gravity keeps its normal pull no matter how small the entity
+	 * gets. Growing still speeds a fall up, which is what keeps a large entity from appearing to
+	 * sink in slow motion.
+	 */
 	@ModifyArg(method = "move", index = 0, at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/Entity;maybeBackOffFromEdge(Lnet/minecraft/world/phys/Vec3;Lnet/minecraft/world/entity/MoverType;)Lnet/minecraft/world/phys/Vec3;"))
 	private Vec3 pehkui$move$maybeBackOffFromEdge(Vec3 movement, MoverType type)
 	{
 		if (type == MoverType.SELF || type == MoverType.PLAYER)
 		{
-			return movement.scale(ScaleUtils.getMotionScale((Entity) (Object) this));
+			final float scale = ScaleUtils.getMotionScale((Entity) (Object) this);
+
+			if (scale != 1.0F)
+			{
+				final double y = scale < 1.0F && movement.y < 0.0D ? movement.y : movement.y * scale;
+
+				return new Vec3(movement.x * scale, y, movement.z * scale);
+			}
 		}
 
 		return movement;
+	}
+
+	/**
+	 * Guards the block effect scan, which visits every block the hitbox covers each tick. A cactus
+	 * or a cobweb means nothing to something the size of a hill, and the scan is what stalls the
+	 * game rather than the effect.
+	 */
+	@ModifyReturnValue(method = "isAffectedByBlocks", at = @At("RETURN"))
+	private boolean pehkui$isAffectedByBlocks(boolean original)
+	{
+		return original && !ScalePhysicsUtils.exceedsScanBudget((Entity) (Object) this);
+	}
+
+	/**
+	 * Suffocation sweeps a slab as wide as the entity, so its cost grows with the square of the
+	 * width. Nothing that large can be smothered by the block its eyes happen to be in.
+	 */
+	@ModifyReturnValue(method = "isInWall", at = @At("RETURN"))
+	private boolean pehkui$isInWall(boolean original)
+	{
+		return original && !ScalePhysicsUtils.exceedsScanBudget((Entity) (Object) this);
+	}
+
+	@ModifyReturnValue(method = "getFluidInteractionBox", at = @At("RETURN"))
+	private AABB pehkui$getFluidInteractionBox(AABB original)
+	{
+		return original == null ? null : ScalePhysicsUtils.limitFor(original, (Entity) (Object) this);
 	}
 
 	@WrapOperation(method = "push(Lnet/minecraft/world/entity/Entity;)V", at = @At(value = "INVOKE", ordinal = 0, target = "Lnet/minecraft/world/entity/Entity;push(DDD)V"))
