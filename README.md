@@ -75,12 +75,38 @@ of the Minecraft-facing half rather than a version bump.
   `PehkuiRenderStateExtensions`) and applied to the pose stack around `submit`.
 - **Knockback.** Upstream patched the knockback constant at each call site. 26.2 routes all
   knockback through `LivingEntity#knockback`, so it is scaled once there, by the attacker.
+- **View bobbing no longer follows size.** 26.2 runs the camera bob and the first-person hand
+  through the same `GameRenderer#bobView` transform, so scaling it turned walking into a violent
+  shake with the hand whipping across the screen once the player got big. The `view_bobbing` scale
+  type is still there and still applied — it just defaults to 1 instead of tracking the entity's
+  size, so set it explicitly if you want the bob to grow.
+- **The inventory portrait fits its frame.** It draws through the normal entity renderer, so a
+  grown player overflowed the box and only a sliver stayed visible. Growth is now capped at the
+  frame, the same way vanilla already caps its own scale attribute there. Shrinking is untouched,
+  so a small player still shows small.
 - **Loader-patched sweep attack.** Forge and NeoForge each rewrite part of
   `Player#doSweepAttack`: NeoForge swaps the hard-coded 9-block radius for the entity interaction
   range attribute (which Pehkui already scales), and Forge builds the sweep box through its own
   `ItemStack#getSweepHitBox` hook. The two injections covering those lines are marked optional so
   each loader applies the ones that still exist on it. Every other injection is required on every
   loader, so a future Minecraft change breaks the build loudly instead of silently doing nothing.
+
+### Cost at large scales
+
+Two things Pehkui itself did got very expensive as an entity grew, and both are bounded now:
+
+- Vanilla nudges an entity out of a wall after it grows by searching every block its new hitbox
+  covers, and skips that entirely for anything over 4 blocks across. Pehkui re-enabled the search
+  for players without that limit, so a growing player ran a whole-hitbox free-space search every
+  tick on the client. It now honours the same limit.
+- The two climb checks that let a wide entity grab a ladder its centre point misses sweep the
+  blocks under the hitbox, so their cost grows with the square of the width, several times a tick.
+  The sweep is abandoned past a 16x16 footprint.
+
+What is left is vanilla's own collision sweep, which walks every block the hitbox touches on any
+tick the entity actually moves. That is inherent to a large hitbox rather than something the mod
+adds. If you want a hard ceiling, every scale type already takes a configurable maximum:
+`/scale debug config set hitbox_width maximum <n>` and the same for `hitbox_height`.
 
 ### Not carried over
 

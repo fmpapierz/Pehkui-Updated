@@ -20,7 +20,12 @@ public class ScaleTypes
 	public static final ScaleType MOTION = register("motion", ScaleModifiers.BASE_MULTIPLIER, ScaleModifiers.MOTION_MULTIPLIER, ScaleModifiers.MOTION_DIVISOR);
 	public static final ScaleType FALLING = register("falling", ScaleModifiers.MOTION_DIVISOR);
 	public static final ScaleType STEP_HEIGHT = register("step_height", ScaleModifiers.MOTION_MULTIPLIER);
-	public static final ScaleType VIEW_BOBBING = register("view_bobbing", ScaleModifiers.MOTION_MULTIPLIER);
+	/**
+	 * Deliberately not tied to the entity's size. The camera bob and the first person hand share
+	 * one transform, so following the size turned a walk into a violent shake once the player got
+	 * big. Set this type explicitly if you do want the bob to grow.
+	 */
+	public static final ScaleType VIEW_BOBBING = register("view_bobbing");
 	public static final ScaleType VISIBILITY = register("visibility", ScaleModifiers.BASE_MULTIPLIER);
 	public static final ScaleType JUMP_HEIGHT = register("jump_height");
 	public static final ScaleType FLIGHT = register("flight");

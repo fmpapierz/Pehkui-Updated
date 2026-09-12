@@ -25,8 +25,13 @@ public abstract class EntityRefreshDimensionsMixin
 	private void pehkui$refreshDimensions(CallbackInfo info, @Local(ordinal = 0) EntityDimensions oldDim, @Local(ordinal = 1) EntityDimensions newDim)
 	{
 		final Entity self = (Entity) (Object) this;
-		
-		if (self.level().isClientSide() && self instanceof Player && !self.isRemoved() && newDim.width() > oldDim.width())
+
+		// The same size limit vanilla applies. Searching for a free spot walks every block the new
+		// hitbox covers, which is ruinous once an entity is tens of blocks across - and a giant
+		// growing another block does not need nudging out of a wall anyway.
+		final boolean isSmall = newDim.width() <= 4.0F && newDim.height() <= 4.0F;
+
+		if (isSmall && self.level().isClientSide() && self instanceof Player && !self.isRemoved() && newDim.width() > oldDim.width())
 		{
 			fudgePositionAfterSizeChange(oldDim);
 		}

@@ -87,6 +87,18 @@ public abstract class LivingEntityMixin extends EntityMixin
 		return scale != 1.0F ? value * scale : value;
 	}
 
+	/**
+	 * Both climb checks below sweep every block under the hitbox, so their cost grows with the
+	 * square of the entity's width and they run several times a tick. Past a 16x16 footprint the
+	 * sweep is abandoned: an entity that wide is not meaningfully interacting with a ladder, and
+	 * the scan is what makes the game stall rather than the climbing.
+	 */
+	@Unique
+	private static boolean pehkui$climbScanTooLarge(final int minX, final int maxX, final int minZ, final int maxZ)
+	{
+		return (long) (maxX - minX + 1) * (maxZ - minZ + 1) > 256L;
+	}
+
 	@ModifyReturnValue(method = "handleOnClimbable", at = @At("RETURN"))
 	private Vec3 pehkui$handleOnClimbable(Vec3 original)
 	{
@@ -112,6 +124,11 @@ public abstract class LivingEntityMixin extends EntityMixin
 			final double halfUnscaledZLength = (bounds.getZsize() / width) / 2.0D;
 			final int minZ = Mth.floor(bounds.minZ + halfUnscaledZLength);
 			final int maxZ = Mth.floor(bounds.maxZ - halfUnscaledZLength);
+
+			if (pehkui$climbScanTooLarge(minX, maxX, minZ, maxZ))
+			{
+				return original;
+			}
 
 			final Level level = self.level();
 
@@ -156,6 +173,11 @@ public abstract class LivingEntityMixin extends EntityMixin
 			final double halfUnscaledZLength = (bounds.getZsize() / width) / 2.0D;
 			final int minZ = Mth.floor(bounds.minZ + halfUnscaledZLength);
 			final int maxZ = Mth.floor(bounds.maxZ - halfUnscaledZLength);
+
+			if (pehkui$climbScanTooLarge(minX, maxX, minZ, maxZ))
+			{
+				return original;
+			}
 
 			pehkui$initialClimbingPos = self.blockPosition();
 
