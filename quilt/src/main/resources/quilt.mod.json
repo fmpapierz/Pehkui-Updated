@@ -37,6 +37,10 @@
 			"client_init":
 			[
 				"virtuoel.pehkui.fabric.PehkuiFabricClient"
+			],
+			"modmenu":
+			[
+				"virtuoel.pehkui.fabric.PehkuiModMenu"
 			]
 		},
 		"depends":

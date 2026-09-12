@@ -28,13 +28,16 @@ public class AbstractClientPlayerMixin
 	}
 
 	/**
-	 * How deep the bob swings. Vanilla caps this a moment later, so only shrunken players notice.
+	 * How deep the bob swings, in both first and third person - they share this one value. Vanilla
+	 * measures it from the velocity, which the mod leaves alone, so the bob was the same depth at
+	 * every size. It now shrinks along with the entity and is left alone above normal size, where
+	 * vanilla's own cap already holds it steady.
 	 */
 	@ModifyExpressionValue(method = "updateBob", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/phys/Vec3;horizontalDistance()D"))
 	private double pehkui$updateBob$distance(double value)
 	{
 		final float scale = ScaleUtils.getMotionScale((Entity) (Object) this);
 
-		return scale != 1.0F ? value / scale : value;
+		return scale < 1.0F ? value * scale : value;
 	}
 }

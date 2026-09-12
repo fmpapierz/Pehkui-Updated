@@ -45,6 +45,10 @@
 		"client":
 		[
 			"virtuoel.pehkui.fabric.PehkuiFabricClient"
+		],
+		"modmenu":
+		[
+			"virtuoel.pehkui.fabric.PehkuiModMenu"
 		]
 	},
 	"mixins":

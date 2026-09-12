@@ -1,9 +1,15 @@
 plugins { id 'net.fabricmc.fabric-loom' }
 
+repositories {
+	// Mod Menu, which supplies the mod list this mod's config button hangs off on Fabric and Quilt.
+	maven { url = 'https://maven.terraformersmc.com/releases' }
+}
+
 dependencies {
 	minecraft "com.mojang:minecraft:${minecraft_version}"
 	implementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
 	implementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
+	implementation "com.terraformersmc:modmenu:${modmenu_version}"
 	compileOnly 'org.jetbrains:annotations:26.0.2'
 	compileOnly 'io.github.llamalad7:mixinextras-common:0.5.5'
 	annotationProcessor 'io.github.llamalad7:mixinextras-common:0.5.5'

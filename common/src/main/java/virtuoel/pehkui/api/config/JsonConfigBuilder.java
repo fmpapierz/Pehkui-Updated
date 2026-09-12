@@ -2,8 +2,11 @@ package virtuoel.pehkui.api.config;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -20,16 +23,52 @@ public class JsonConfigBuilder
 {
 	public final String namespace;
 	public final JsonConfigHandler config;
-	
+
+	private final Map<String, Declared<?>> declared = new LinkedHashMap<>();
+
 	public JsonConfigBuilder(final String namespace, final Path path)
 	{
 		this.namespace = namespace;
 		this.config = new JsonConfigHandler(path);
 	}
-	
+
+	/**
+	 * The kinds of entry a config file holds, so that a screen can pick an editor for each one
+	 * without having to guess from the value.
+	 */
+	public enum Kind
+	{
+		BOOLEAN,
+		DOUBLE,
+		STRING_LIST
+	}
+
+	/**
+	 * One declared entry: its flat key, what it holds, and the entry itself.
+	 */
+	public record Declared<T> (String name, Kind kind, T defaultValue, MutableConfigEntry<T> entry)
+	{
+
+	}
+
+	/**
+	 * Every entry declared so far, in declaration order.
+	 */
+	public Collection<Declared<?>> getDeclaredEntries()
+	{
+		return Collections.unmodifiableCollection(this.declared.values());
+	}
+
+	private <T> MutableConfigEntry<T> declare(final String name, final Kind kind, final T defaultValue, final MutableConfigEntry<T> entry)
+	{
+		this.declared.put(name, new Declared<>(name, kind, defaultValue, entry));
+
+		return entry;
+	}
+
 	public MutableConfigEntry<Boolean> booleanConfig(final String name, final boolean defaultValue)
 	{
-		return createConfigEntry(
+		return declare(name, Kind.BOOLEAN, defaultValue, createConfigEntry(
 			name,
 			defaultValue,
 			() ->
@@ -39,27 +78,27 @@ public class JsonConfigBuilder
 				return element != null && element.isJsonPrimitive() ? element.getAsBoolean() : defaultValue;
 			},
 			value -> set(name, new JsonPrimitive(value == null ? defaultValue : value))
-		);
+		));
 	}
-	
+
 	public MutableConfigEntry<Double> doubleConfig(final String name, final double defaultValue)
 	{
-		return createConfigEntry(
+		return declare(name, Kind.DOUBLE, defaultValue, createConfigEntry(
 			name,
 			defaultValue,
 			() ->
 			{
 				final JsonElement element = get(name);
-				
+
 				return element != null && element.isJsonPrimitive() ? element.getAsDouble() : defaultValue;
 			},
 			value -> set(name, new JsonPrimitive(value == null ? defaultValue : value))
-		);
+		));
 	}
-	
+
 	public MutableConfigEntry<List<String>> stringListConfig(final String name)
 	{
-		return createConfigEntry(
+		return declare(name, Kind.STRING_LIST, Collections.<String>emptyList(), createConfigEntry(
 			name,
 			Collections.<String>emptyList(),
 			() ->
@@ -97,9 +136,9 @@ public class JsonConfigBuilder
 				
 				set(name, array);
 			}
-		);
+		));
 	}
-	
+
 	/**
 	 * Overridden by {@code PehkuiConfig} so that every entry it declares can also be server-synced.
 	 */

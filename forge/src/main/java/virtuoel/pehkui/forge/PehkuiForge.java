@@ -46,6 +46,8 @@ public final class PehkuiForge
 	{
 		Pehkui.init();
 		
+		ForgeClientHooks.registerConfigScreen(context);
+		
 		final var modBus = context.getModBusGroup();
 		
 		final DeferredRegister<ArgumentTypeInfo<?, ?>> argumentTypes = DeferredRegister.create(Registries.COMMAND_ARGUMENT_TYPE, Pehkui.MOD_ID);

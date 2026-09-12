@@ -78,10 +78,13 @@ of the Minecraft-facing half rather than a version bump.
 - **The walk bob is measured in strides, not blocks.** 26.2 runs the camera bob and the
   first-person hand through the same `GameRenderer#bobView` transform, fed by how far the player
   has walked and how far it moved this tick — both in blocks. Scaled up that meant a violent shake
-  with the hand whipping across the screen; scaled down it meant no bob at all. Both inputs are now
-  divided by the motion scale, so the bob keeps its normal depth and cadence at any size. The
-  `view_bobbing` scale type is still there and still applied — it just defaults to 1 instead of
-  tracking the entity's size, so set it explicitly if you want the bob to grow.
+  with the hand whipping across the screen. The pace is divided by the motion scale so the bob
+  keeps its normal cadence at any size, and the
+  depth now shrinks with the entity while staying put above normal size, where vanilla's own cap
+  already holds it steady. Both the first person view and the third person camera read the same
+  value, so they move together. The `view_bobbing` scale type is still there and still applied — it
+  just defaults to 1 instead of tracking the entity's size, so set it explicitly if you want the
+  whole transform to grow.
 - **The near clipping plane follows the camera down.** Upstream scaled the plane used for the held
   item, but 26.2 sets the world's own near plane in `Camera#update`, which upstream never touched.
   Below about 1/30 scale the eyes sit closer to the floor than the fixed 5cm plane, which put the
@@ -99,6 +102,12 @@ of the Minecraft-facing half rather than a version bump.
   grown player overflowed the box and only a sliver stayed visible. Growth is now capped at the
   frame, the same way vanilla already caps its own scale attribute there. Shrinking is untouched,
   so a small player still shows small.
+- **A config screen on every loader.** The mod list's config button used to be greyed out
+  everywhere, since upstream never had a screen to open. There is one now: it lists every key in
+  `config/pehkui/config.json` by its exact name, with a search box and paging for the hundred-odd
+  entries the scale clamps add, and it writes straight back to the file. It is registered through
+  each loader's own hook — Mod Menu on Fabric and Quilt, `IConfigScreenFactory` on NeoForge,
+  `ConfigScreenHandler` on Forge — so the button is live in all four mod lists.
 - **Loader-patched sweep attack.** Forge and NeoForge each rewrite part of
   `Player#doSweepAttack`: NeoForge swaps the hard-coded 9-block radius for the entity interaction
   range attribute (which Pehkui already scales), and Forge builds the sweep box through its own
